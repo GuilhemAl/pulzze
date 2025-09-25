@@ -1,0 +1,45 @@
+﻿@import "./tokens.css";
+@import "./reset.css";
+
+:root {
+  background-color: var(--color-surface-muted);
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+button:focus-visible,
+[role='button']:focus-visible,
+a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 60%, transparent);
+  outline-offset: 4px;
+}
+
+:where(button) {
+  border: none;
+  cursor: pointer;
+  transition: transform var(--transition-default), box-shadow var(--transition-default);
+}
+
+:where(button):disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

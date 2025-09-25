@@ -1,0 +1,39 @@
+﻿.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-1);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: var(--shadow-card);
+  transition: background-color var(--transition-default), transform var(--transition-default), box-shadow var(--transition-default);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
+}
+
+.primary {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-text);
+}
+
+.ghost {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  box-shadow: none;
+}
+
+.ghost:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+

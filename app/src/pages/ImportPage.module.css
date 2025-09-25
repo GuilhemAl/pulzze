@@ -1,0 +1,71 @@
+﻿.page {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.header {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: clamp(1.75rem, 3vw, 2.3rem);
+  font-weight: 700;
+}
+
+.uploadCard {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-2);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.dropzone {
+  border: 2px dashed color-mix(in srgb, var(--color-primary) 40%, transparent);
+  border-radius: var(--radius-2);
+  padding: var(--space-6);
+  text-align: center;
+  display: grid;
+  gap: var(--space-2);
+  cursor: pointer;
+  background-color: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
+}
+
+.requirements {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.previewArea {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.previewBox {
+  background-color: color-mix(in srgb, var(--color-secondary) 18%, transparent);
+  border-radius: var(--radius-1);
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-muted);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+@media (max-width: 768px) {
+  .uploadCard {
+    padding: var(--space-4);
+  }
+
+  .dropzone {
+    padding: var(--space-4);
+  }
+}

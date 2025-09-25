@@ -1,0 +1,86 @@
+﻿.page {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.hero {
+  display: grid;
+  gap: var(--space-4);
+  align-items: center;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.heroContent {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.heroTitle {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.1;
+  font-weight: 800;
+}
+
+.heroText {
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+}
+
+.heroActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.heroIllustration {
+  min-height: 260px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 40%, transparent), color-mix(in srgb, var(--color-secondary) 60%, transparent));
+  border-radius: var(--radius-2);
+  box-shadow: var(--shadow-soft);
+  position: relative;
+  overflow: hidden;
+}
+
+.heroIllustration::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border-radius: var(--radius-2);
+  border: 3px dashed color-mix(in srgb, var(--color-surface) 40%, transparent);
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+
+.featureCard {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-1);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-card);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.featureTitle {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.featureText {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 960px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .heroIllustration {
+    order: -1;
+  }
+}
