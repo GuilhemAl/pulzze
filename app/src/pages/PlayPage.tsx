@@ -1,4 +1,4 @@
-﻿import clsx from "clsx";
+import clsx from "clsx";
 import {
   useCallback,
   useEffect,
@@ -11,10 +11,8 @@ import { useParams } from "react-router-dom";
 
 import { Button } from "../components/Button";
 import { ButtonLink } from "../components/ButtonLink";
-import {
-  fetchImageById,
-  type GalleryImage
-} from "../services/supabase-images";
+import { fetchImageById, type GalleryImage } from "../services/supabase-images";
+import { sliceImageIntoPieces } from "../services/puzzle-pieces";
 import {
   usePuzzleStore,
   type PuzzlePiece
@@ -38,65 +36,7 @@ const formatSeconds = (value: number) => {
   return `${minutes}:${seconds}`;
 };
 
-const loadImageElement = (url: string) =>
-  new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.crossOrigin = "anonymous";
-    image.onload = () => resolve(image);
-    image.onerror = (event) => reject(event);
-    image.src = url;
-  });
-
-const createPuzzlePieces = async (imageUrl: string) => {
-  const image = await loadImageElement(imageUrl);
-  const sliceSize = Math.min(image.naturalWidth, image.naturalHeight);
-  const offsetX = (image.naturalWidth - sliceSize) / 2;
-  const offsetY = (image.naturalHeight - sliceSize) / 2;
-  const segmentSize = sliceSize / GRID_SIZE;
-
-  const canvas = document.createElement("canvas");
-  const EXPORT_SIZE = 256;
-  canvas.width = EXPORT_SIZE;
-  canvas.height = EXPORT_SIZE;
-  const context = canvas.getContext("2d");
-
-  if (!context) {
-    throw new Error("Canvas 2D non disponible pour generer les pieces.");
-  }
-
-  const pieces = [] as Array<{
-    id: string;
-    imageData: string;
-    correctRow: number;
-    correctCol: number;
-  }>;
-
-  for (let row = 0; row < GRID_SIZE; row += 1) {
-    for (let col = 0; col < GRID_SIZE; col += 1) {
-      context.clearRect(0, 0, EXPORT_SIZE, EXPORT_SIZE);
-      context.drawImage(
-        image,
-        offsetX + col * segmentSize,
-        offsetY + row * segmentSize,
-        segmentSize,
-        segmentSize,
-        0,
-        0,
-        EXPORT_SIZE,
-        EXPORT_SIZE
-      );
-      const imageData = canvas.toDataURL("image/png");
-      pieces.push({
-        id: `${row}-${col}`,
-        imageData,
-        correctRow: row,
-        correctCol: col
-      });
-    }
-  }
-
-  return pieces;
-};
+const cellKey = (row: number, col: number) => `${row}-${col}`;
 
 export const PlayPage = () => {
   const { imageId } = useParams<RouteParams>();
@@ -157,11 +97,16 @@ export const PlayPage = () => {
           setLoadError("Image introuvable ou non publiee.");
           return;
         }
-        setImage(record);
-        const generatedPieces = await createPuzzlePieces(record.publicUrl);
+
+        const generatedPieces = await sliceImageIntoPieces(
+          record.publicUrl,
+          GRID_SIZE
+        );
         if (!isActive) {
           return;
         }
+
+        setImage(record);
         initialise(generatedPieces);
       } catch (error) {
         console.error(error);
@@ -183,6 +128,15 @@ export const PlayPage = () => {
     };
   }, [imageId, initialise, reset]);
 
+  useEffect(() => {
+    if (!startedAt || !completedAt) {
+      return;
+    }
+
+    const totalSeconds = Math.max(0, Math.round((completedAt - startedAt) / 1000));
+    setFeedbackMessage(`Bravo ! Puzzle termine en ${formatSeconds(totalSeconds)}`);
+  }, [completedAt, startedAt]);
+
   const trayPieces = useMemo(
     () =>
       pieces
@@ -195,10 +149,7 @@ export const PlayPage = () => {
     const occupancy = new Map<string, PuzzlePiece>();
     pieces.forEach((piece) => {
       if (piece.location.area === "board") {
-        occupancy.set(
-          `${piece.location.row}-${piece.location.col}`,
-          piece
-        );
+        occupancy.set(cellKey(piece.location.row, piece.location.col), piece);
       }
     });
     return occupancy;
@@ -211,14 +162,12 @@ export const PlayPage = () => {
       return undefined;
     }
 
-    const style: CSSProperties = {
+    return {
       backgroundImage: `url(${image.publicUrl})`,
-      backgroundSize: "100% 100%",
+      backgroundSize: "cover",
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat"
-    };
-
-    return style;
+    } satisfies CSSProperties;
   }, [image, hintVisible]);
 
   const handleDragStart = useCallback(
@@ -233,8 +182,8 @@ export const PlayPage = () => {
 
   const handleDragOver = useCallback(
     (row: number, col: number) => (event: DragEvent<HTMLDivElement>) => {
-      const cellKey = `${row}-${col}`;
-      if (boardOccupancy.has(cellKey)) {
+      const key = cellKey(row, col);
+      if (boardOccupancy.has(key)) {
         return;
       }
       event.preventDefault();
@@ -245,30 +194,29 @@ export const PlayPage = () => {
 
   const handleDragEnter = useCallback(
     (row: number, col: number) => () => {
-      const cellKey = `${row}-${col}`;
-      if (boardOccupancy.has(cellKey)) {
+      const key = cellKey(row, col);
+      if (boardOccupancy.has(key)) {
         return;
       }
-      setDragOverCell(cellKey);
+      setDragOverCell(key);
     },
     [boardOccupancy]
   );
 
-  const handleDragLeave = useCallback((row: number, col: number) => () => {
-    const cellKey = `${row}-${col}`;
-    setDragOverCell((current) => (current === cellKey ? null : current));
-  }, []);
+  const handleDragLeave = useCallback(
+    (row: number, col: number) => () => {
+      const key = cellKey(row, col);
+      if (dragOverCell === key) {
+        setDragOverCell(null);
+      }
+    },
+    [dragOverCell]
+  );
 
   const handleDrop = useCallback(
     (row: number, col: number) => (event: DragEvent<HTMLDivElement>) => {
       event.preventDefault();
-      const cellKey = `${row}-${col}`;
       setDragOverCell(null);
-
-      if (boardOccupancy.has(cellKey)) {
-        setFeedbackMessage("Cette case est deja occupee.");
-        return;
-      }
 
       const pieceId =
         event.dataTransfer.getData("application/puzzle-piece") ||
@@ -279,26 +227,26 @@ export const PlayPage = () => {
       }
 
       const success = moveToBoard(pieceId, row, col);
-      if (!success) {
-        setFeedbackMessage("Cette piece ne correspond pas a cette position.");
+      if (success) {
+        setFeedbackMessage("Piece en place !");
       } else {
-        setFeedbackMessage(null);
+        setFeedbackMessage("Essaie une autre case.");
       }
     },
-    [boardOccupancy, moveToBoard]
+    [moveToBoard]
   );
 
   const renderBoardCell = (row: number, col: number) => {
-    const cellKey = `${row}-${col}`;
-    const boardPiece = boardOccupancy.get(cellKey);
+    const key = cellKey(row, col);
+    const boardPiece = boardOccupancy.get(key);
 
     return (
       <div
-        key={cellKey}
+        key={key}
         className={clsx(
           styles.boardCell,
           boardPiece && styles.boardCellFilled,
-          dragOverCell === cellKey && styles.boardCellActive
+          dragOverCell === key && styles.boardCellActive
         )}
         onDragOver={handleDragOver(row, col)}
         onDragEnter={handleDragEnter(row, col)}
@@ -306,18 +254,22 @@ export const PlayPage = () => {
         onDrop={handleDrop(row, col)}
         role="presentation"
       >
-        {boardPiece ? (
-          <img
-            src={boardPiece.imageData}
-            alt={`Piece position ${row + 1}-${col + 1}`}
-            className={styles.boardPiece}
-            draggable={false}
-          />
-        ) : (
-          <span className={styles.cellPlaceholder} aria-hidden="true">
-            {row + 1}-{col + 1}
-          </span>
-        )}
+        <div className={styles.boardCellInner}>
+          {boardPiece ? (
+            <div className={styles.boardPiece}>
+              <img
+                src={boardPiece.imageSrc}
+                alt=""
+                className={styles.boardPieceImage}
+                draggable={false}
+              />
+            </div>
+          ) : (
+            <span className={styles.cellPlaceholder} aria-hidden="true">
+              {row + 1}-{col + 1}
+            </span>
+          )}
+        </div>
       </div>
     );
   };
@@ -409,9 +361,9 @@ export const PlayPage = () => {
                 aria-label={`Piece a placer ${piece.id}`}
               >
                 <img
-                  src={piece.imageData}
+                  src={piece.imageSrc}
                   alt=""
-                  className={styles.pieceImage}
+                  className={styles.trayPieceImage}
                   draggable={false}
                 />
               </div>

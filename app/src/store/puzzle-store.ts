@@ -1,4 +1,4 @@
-﻿import { create } from "zustand";
+import { create } from "zustand";
 
 type PieceLocation =
   | { area: "tray" }
@@ -8,6 +8,7 @@ export type PuzzlePiece = {
   id: string;
   correctRow: number;
   correctCol: number;
+  imageSrc: string;
   placed: boolean;
   location: PieceLocation;
   order: number;
@@ -17,6 +18,7 @@ type PuzzlePieceInput = {
   id: string;
   correctRow: number;
   correctCol: number;
+  imageSrc: string;
 };
 
 export type PuzzleState = {
@@ -32,12 +34,11 @@ export type PuzzleState = {
   };
 };
 
-const shufflePieces = (pieces: PuzzlePieceInput[]) => {
-  return [...pieces]
+const shufflePieces = (pieces: PuzzlePieceInput[]) =>
+  [...pieces]
     .map((piece) => ({ sortKey: Math.random(), piece }))
     .sort((a, b) => a.sortKey - b.sortKey)
     .map(({ piece }) => piece);
-};
 
 export const usePuzzleStore = create<PuzzleState>((set) => ({
   pieces: [],
@@ -81,12 +82,12 @@ export const usePuzzleStore = create<PuzzleState>((set) => ({
           return state;
         }
 
-        const updatedPieces: PuzzlePiece[] = state.pieces.map((item) =>
+        const updatedPieces = state.pieces.map((item) =>
           item.id === pieceId
             ? {
                 ...item,
                 placed: true,
-                location: { area: "board", row, col }
+                location: { area: "board" as const, row, col }
               }
             : item
         );
